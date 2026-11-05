@@ -1,0 +1,14 @@
+{
+  "name": "DnD Мастер",
+  "short_name": "DnD Мастер",
+  "description": "Учёт кампании для ведущего D&D",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#1b1522",
+  "theme_color": "#1b1522",
+  "icons": [
+    {"src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable"}
+  ]
+}
