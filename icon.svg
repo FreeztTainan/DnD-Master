@@ -1,6 +1,42 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
   <rect width="512" height="512" fill="#1b1522"/>
-  <polygon points="256,70 420,165 420,347 256,442 92,347 92,165" fill="#d4a24c"/>
-  <polygon points="256,70 420,165 256,230 92,165" fill="#e8c070"/>
-  <text x="256" y="320" font-size="140" font-weight="bold" text-anchor="middle" fill="#1b1522" font-family="sans-serif">20</text>
+
+  <!-- Внешний контур: шестиугольник -->
+  <polygon points="256,40 443,148 443,364 256,472 69,364 69,148" fill="#d4a24c" stroke="#8a6420" stroke-width="6" stroke-linejoin="round"/>
+
+  <!-- Внешние боковые грани -->
+  <polygon points="256,40 443,148 350,190" fill="#e8c070"/>
+  <polygon points="256,40 69,148 162,190" fill="#c8923a"/>
+  <polygon points="443,148 443,364 350,190" fill="#b8832f"/>
+  <polygon points="69,148 69,364 162,190" fill="#e0b25c"/>
+  <polygon points="443,364 256,472 350,322" fill="#c8923a"/>
+  <polygon points="69,364 256,472 162,322" fill="#b8832f"/>
+
+  <!-- Верхняя и нижняя грани вокруг центра -->
+  <polygon points="256,40 162,190 350,190" fill="#f0cd85"/>
+  <polygon points="256,472 162,322 350,322" fill="#a97829"/>
+
+  <!-- Боковые грани между внешним и центральным -->
+  <polygon points="162,190 69,364 162,322" fill="#d4a24c"/>
+  <polygon points="350,190 443,364 350,322" fill="#d4a24c"/>
+
+  <!-- Центральный треугольник с цифрой 20 -->
+  <polygon points="256,150 350,322 162,322" fill="#e8c070" stroke="#8a6420" stroke-width="6" stroke-linejoin="round"/>
+
+  <!-- Рёбра граней -->
+  <g stroke="#8a6420" stroke-width="5" stroke-linejoin="round" stroke-linecap="round" fill="none">
+    <polyline points="256,40 256,150"/>
+    <polyline points="162,190 256,150 350,190"/>
+    <polyline points="162,190 162,322"/>
+    <polyline points="350,190 350,322"/>
+    <polyline points="162,322 256,472"/>
+    <polyline points="350,322 256,472"/>
+    <polyline points="162,190 69,148"/>
+    <polyline points="350,190 443,148"/>
+    <polyline points="162,322 69,364"/>
+    <polyline points="350,322 443,364"/>
+  </g>
+
+  <!-- Цифра на центральной грани -->
+  <text x="256" y="298" font-size="84" font-weight="bold" text-anchor="middle" fill="#1b1522" font-family="Georgia, serif">20</text>
 </svg>
