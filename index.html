@@ -79,9 +79,15 @@ h4{margin:14px 0 6px;color:var(--acc);font-size:14px}
 .ava{width:64px;height:64px;border-radius:12px;object-fit:cover;flex:none;border:2px solid var(--card2)}
 .pimg{display:block;width:140px;height:140px;border-radius:14px;object-fit:cover;border:2px solid var(--card2)}
 .pimg.ph{display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:13px;background:var(--bg)}
+/* Заставка */
+#splash{position:fixed;inset:0;z-index:1000;background:#1b1522;display:flex;align-items:center;justify-content:center;touch-action:none;animation:splashOut 5s ease-in-out forwards}
+#splash img{width:min(60vw,260px);height:auto;opacity:0;animation:splashIn 5s ease-in-out forwards}
+@keyframes splashIn{0%{opacity:0}18%{opacity:1}100%{opacity:1}}
+@keyframes splashOut{0%{opacity:1}85%{opacity:1}100%{opacity:0}}
 </style>
 </head>
 <body>
+<div id="splash"><img src="icon.svg" alt=""></div>
 <header><h1 id="title">DnD Мастер</h1><input id="search" placeholder="Поиск по всему..." type="search"></header>
 <main id="main"></main>
 <button class="fab" id="fab">+</button>
@@ -463,6 +469,8 @@ document.getElementById('fab').onclick=()=>openForm(tab);
 document.getElementById('search').oninput=render;
 document.getElementById('modal').onclick=e=>{if(e.target.id==='modal')closeForm()};
 if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js');
+/* Заставка: убирается сама через 5 секунд */
+(function(){const s=document.getElementById('splash');if(!s)return;const end=()=>{if(s.parentNode)s.parentNode.removeChild(s);};s.addEventListener('animationend',e=>{if(e.target===s)end();});setTimeout(end,5300);})();
 render();
 </script>
 </body>
