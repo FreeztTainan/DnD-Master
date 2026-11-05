@@ -1,5 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" fill="#1b1522"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" preserveAspectRatio="xMidYMid slice">
+  <!-- Фон: чуть шире холста, чтобы по краям не оставалось полос -->
+  <rect x="-10" y="-10" width="532" height="532" fill="#1b1522" shape-rendering="crispEdges"/>
 
   <!-- Корпус d20: правильный шестиугольник -->
   <polygon points="256,51 434,154 434,358 256,461 78,358 78,154" fill="#3f51d6" stroke="#1b1522" stroke-width="8" stroke-linejoin="round"/>
