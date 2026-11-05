@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1b1522">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg">
+<link rel="apple-touch-icon" href="icon.svg">
+<title>DnD Мастер</title>
+<style>
+:root{--bg:#1b1522;--card:#2a2133;--card2:#352a41;--text:#f1eaf7;--muted:#a998b8;--acc:#d4a24c;--danger:#d9534f;--ok:#5cb85c}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,Segoe UI,Roboto,sans-serif;padding-bottom:calc(70px + env(safe-area-inset-bottom));min-height:100vh}
+header{position:sticky;top:0;background:var(--bg);padding:12px 14px;border-bottom:1px solid var(--card2);z-index:5;padding-top:calc(12px + env(safe-area-inset-top))}
+header h1{margin:0 0 8px;font-size:18px;color:var(--acc)}
+#search{width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--card2);background:var(--card);color:var(--text);font-size:15px}
+main{padding:12px 14px}
+.card{background:var(--card);border-radius:12px;padding:12px;margin-bottom:10px;border-left:4px solid var(--acc)}
+.card h3{margin:0 0 4px;font-size:16px}
+.card p{margin:4px 0;color:var(--muted);font-size:14px;white-space:pre-wrap}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.tag{display:inline-block;padding:2px 8px;border-radius:20px;background:var(--card2);font-size:12px;color:var(--text)}
+.tag.active{background:#3d5a80}.tag.done{background:#3b6b3b}.tag.failed{background:#7a3030}.tag.pending{background:#6b5a2a}
+nav{position:fixed;bottom:0;left:0;right:0;display:flex;background:var(--card);border-top:1px solid var(--card2);padding-bottom:env(safe-area-inset-bottom);z-index:6}
+nav button{flex:1;background:none;border:0;color:var(--muted);padding:10px 2px;font-size:11px}
+nav button .i{display:block;font-size:20px}
+nav button.on{color:var(--acc)}
+.fab{position:fixed;right:16px;bottom:calc(78px + env(safe-area-inset-bottom));width:54px;height:54px;border-radius:50%;background:var(--acc);color:#1b1522;border:0;font-size:30px;box-shadow:0 4px 12px #0008;z-index:7}
+.modal{position:fixed;inset:0;background:#000b;display:none;align-items:flex-end;z-index:20}
+.modal.show{display:flex}
+.sheet{background:var(--card);width:100%;max-height:92vh;overflow:auto;border-radius:18px 18px 0 0;padding:16px;padding-bottom:calc(16px + env(safe-area-inset-bottom))}
+.sheet h2{margin:0 0 10px;font-size:18px;color:var(--acc)}
+label{display:block;font-size:12px;color:var(--muted);margin:10px 0 4px}
+input,textarea,select{width:100%;padding:10px;border-radius:8px;border:1px solid var(--card2);background:var(--bg);color:var(--text);font-size:15px;font-family:inherit}
+textarea{min-height:80px;resize:vertical}
+.btn{padding:11px 16px;border-radius:10px;border:0;font-size:15px;background:var(--acc);color:#1b1522;font-weight:600}
+.btn.sec{background:var(--card2);color:var(--text)}
+.btn.del{background:var(--danger);color:#fff}
+.btns{display:flex;gap:8px;margin-top:16px;flex-wrap:wrap}
+.empty{text-align:center;color:var(--muted);padding:40px 10px}
+.hp{display:flex;align-items:center;gap:6px}
+.hp button{width:32px;height:32px;border-radius:8px;border:0;background:var(--card2);color:var(--text);font-size:18px}
+.stat{font-size:13px;color:var(--text)}
+h4{margin:14px 0 6px;color:var(--acc);font-size:14px}
+.link{color:#8ec5ff;text-decoration:underline;font-size:13px;margin-right:8px}
+</style>
+</head>
+<body>
+<header><h1 id="title">DnD Мастер</h1><input id="search" placeholder="Поиск по всему..." type="search"></header>
+<main id="main"></main>
+<button class="fab" id="fab">+</button>
+<nav id="nav"></nav>
+<div class="modal" id="modal"><div class="sheet" id="sheet"></div></div>
+
+<script>
+const TABS=[
+ {id:'plot',name:'Сюжет',icon:'📜'},
+ {id:'quests',name:'Квесты',icon:'🎯'},
+ {id:'pcs',name:'Игроки',icon:'🛡️'},
+ {id:'npcs',name:'НИП',icon:'🎭'},
+ {id:'sessions',name:'Сессии',icon:'📖'},
+ {id:'more',name:'Ещё',icon:'⚙️'}
+];
+const SCHEMAS={
+ plot:{one:'Сюжетная линия',fields:[
+  {k:'name',l:'Название',t:'text'},
+  {k:'status',l:'Статус',t:'select',o:{active:'Идёт',pending:'Запланирована',done:'Завершена'}},
+  {k:'summary',l:'Суть',t:'area'},
+  {k:'secrets',l:'Тайны (видишь только ты)',t:'area'},
+  {k:'next',l:'Что дальше',t:'area'}]},
+ quests:{one:'Квест',fields:[
+  {k:'name',l:'Название',t:'text'},
+  {k:'status',l:'Статус',t:'select',o:{active:'Активен',pending:'Не взят',done:'Выполнен',failed:'Провален'}},
+  {k:'giver',l:'Кто дал',t:'ref:npcs'},
+  {k:'plot',l:'Сюжетная линия',t:'ref:plot'},
+  {k:'goal',l:'Цель',t:'area'},
+  {k:'reward',l:'Награда',t:'text'},
+  {k:'notes',l:'Заметки',t:'area'}]},
+ pcs:{one:'Персонаж игрока',fields:[
+  {k:'name',l:'Имя персонажа',t:'text'},
+  {k:'player',l:'Игрок',t:'text'},
+  {k:'cls',l:'Класс и раса',t:'text'},
+  {k:'lvl',l:'Уровень',t:'num'},
+  {k:'hp',l:'Текущие хиты',t:'num'},
+  {k:'maxhp',l:'Максимум хитов',t:'num'},
+  {k:'ac',l:'Класс брони',t:'num'},
+  {k:'pp',l:'Пассивное восприятие',t:'num'},
+  {k:'bg',l:'Предыстория и цели',t:'area'},
+  {k:'items',l:'Важные вещи',t:'area'},
+  {k:'notes',l:'Заметки',t:'area'}]},
+ npcs:{one:'НИП',fields:[
+  {k:'name',l:'Имя',t:'text'},
+  {k:'role',l:'Кто это',t:'text'},
+  {k:'loc',l:'Где находится',t:'text'},
+  {k:'attitude',l:'Отношение к группе',t:'select',o:{friend:'Дружелюбен',neutral:'Нейтрален',foe:'Враждебен',unknown:'Неизвестно'}},
+  {k:'look',l:'Внешность и манеры',t:'area'},
+  {k:'motive',l:'Цели и тайны',t:'area'},
+  {k:'notes',l:'Заметки',t:'area'}]},
+ sessions:{one:'Сессия',fields:[
+  {k:'name',l:'Название',t:'text'},
+  {k:'date',l:'Дата',t:'date'},
+  {k:'recap',l:'Что произошло',t:'area'},
+  {k:'loot',l:'Добыча и опыт',t:'area'},
+  {k:'todo',l:'Подготовить к следующей',t:'area'}]}
+};
+const KEY='dnd-master-v1';
+let DB=load();
+let tab='plot',editing=null;
+function load(){try{const d=JSON.parse(localStorage.getItem(KEY));if(d)return d}catch(e){}return{campaign:'Моя кампания',plot:[],quests:[],pcs:[],npcs:[],sessions:[]}}
+function save(){localStorage.setItem(KEY,JSON.stringify(DB))}
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6)}
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function byId(col,id){return DB[col].find(x=>x.id===id)}
+function nav(){
+ const n=document.getElementById('nav');
+ n.innerHTML=TABS.map(t=>`<button class="${t.id===tab?'on':''}" data-t="${t.id}"><span class="i">${t.icon}</span>${t.name}</button>`).join('');
+ n.querySelectorAll('button').forEach(b=>b.onclick=()=>{tab=b.dataset.t;document.getElementById('search').value='';render()});
+}
+function statusTag(sc,item){
+ const f=SCHEMAS[sc].fields.find(x=>x.k==='status'||x.k==='attitude');
+ if(!f)return'';
+ const v=item[f.k];if(!v)return'';
+ return `<span class="tag ${v}">${esc(f.o[v]||v)}</span>`;
+}
+function cardHTML(sc,it){
+ let body='';
+ if(sc==='plot')body=`<p>${esc(it.summary)}</p>${it.next?`<p><b>Дальше:</b> ${esc(it.next)}</p>`:''}${linkedQuests(it.id)}`;
+ if(sc==='quests'){
+  const g=byId('npcs',it.giver),p=byId('plot',it.plot);
+  body=`<p>${esc(it.goal)}</p><div class="row">${it.reward?`<span class="tag">Награда: ${esc(it.reward)}</span>`:''}${g?`<span class="tag">От: ${esc(g.name)}</span>`:''}${p?`<span class="tag">Линия: ${esc(p.name)}</span>`:''}</div>`;
+ }
+ if(sc==='pcs'){
+  const hp=+it.hp||0,mx=+it.maxhp||0;
+  body=`<div class="row stat"><span>${esc(it.cls)}</span><span class="tag">Ур. ${esc(it.lvl||'?')}</span><span class="tag">КБ ${esc(it.ac||'-')}</span><span class="tag">ПВ ${esc(it.pp||'-')}</span></div>
+  <div class="hp" style="margin-top:8px"><button data-hp="-1" data-id="${it.id}">−</button><b style="color:${mx&&hp<=mx/4?'var(--danger)':'var(--text)'}">❤ ${hp}/${mx}</b><button data-hp="1" data-id="${it.id}">+</button><button data-hp="-5" data-id="${it.id}" style="width:40px">−5</button><button data-hp="5" data-id="${it.id}" style="width:40px">+5</button></div>
+  <p>Игрок: ${esc(it.player)}</p>`;
+ }
+ if(sc==='npcs'){
+  const qs=DB.quests.filter(q=>q.giver===it.id);
+  body=`<p>${esc(it.role)}${it.loc?' · 📍'+esc(it.loc):''}</p>${qs.length?`<p>Квесты: ${qs.map(q=>esc(q.name)).join(', ')}</p>`:''}`;
+ }
+ if(sc==='sessions')body=`<p>${esc(it.date||'')}</p><p>${esc((it.recap||'').slice(0,160))}${(it.recap||'').length>160?'…':''}</p>`;
+ return `<div class="card" data-sc="${sc}" data-id="${it.id}"><div class="row"><h3>${esc(it.name||'Без названия')}</h3>${statusTag(sc,it)}</div>${body}</div>`;
+}
+function linkedQuests(pid){
+ const qs=DB.quests.filter(q=>q.plot===pid);
+ return qs.length?`<p>Квесты линии: ${qs.map(q=>esc(q.name)).join(', ')}</p>`:'';
+}
+function render(){
+ nav();
+ document.getElementById('title').textContent=DB.campaign;
+ const m=document.getElementById('main');
+ const q=document.getElementById('search').value.trim().toLowerCase();
+ document.getElementById('fab').style.display=(tab==='more'||q)?'none':'block';
+ if(q){
+  let out='';
+  for(const sc of Object.keys(SCHEMAS)){
+   const hits=DB[sc].filter(it=>JSON.stringify(it).toLowerCase().includes(q));
+   if(hits.length)out+=`<h4>${SCHEMAS[sc].one}</h4>`+hits.map(it=>cardHTML(sc,it)).join('');
+  }
+  m.innerHTML=out||'<div class="empty">Ничего не найдено</div>';
+  bind();return;
+ }
+ if(tab==='more'){
+  m.innerHTML=`<div class="card"><h3>Название кампании</h3><input id="cname" value="${esc(DB.campaign)}"></div>
+  <div class="card"><h3>Резервная копия</h3><p>Сохрани файл с данными или восстанови из файла.</p><div class="btns"><button class="btn" id="exp">Экспорт</button><button class="btn sec" id="imp">Импорт</button></div><input type="file" id="file" accept=".json" style="display:none"></div>
+  <div class="card"><h3>Сводка</h3><p>Сюжетных линий: ${DB.plot.length}\nКвестов активных: ${DB.quests.filter(x=>x.status==='active').length} из ${DB.quests.length}\nПерсонажей игроков: ${DB.pcs.length}\nНИП: ${DB.npcs.length}\nСессий: ${DB.sessions.length}</p></div>`;
+  document.getElementById('cname').onchange=e=>{DB.campaign=e.target.value||'Моя кампания';save();render()};
+  document.getElementById('exp').onclick=exportData;
+  document.getElementById('imp').onclick=()=>document.getElementById('file').click();
+  document.getElementById('file').onchange=importData;
+  return;
+ }
+ let list=DB[tab].slice();
+ if(tab==='sessions')list.sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+ if(tab==='quests'){const o={active:0,pending:1,done:2,failed:3};list.sort((a,b)=>(o[a.status]??9)-(o[b.status]??9))}
+ m.innerHTML=list.length?list.map(it=>cardHTML(tab,it)).join(''):`<div class="empty">Пока пусто.<br>Нажми + чтобы добавить.</div>`;
+ bind();
+}
+function bind(){
+ document.querySelectorAll('.card[data-sc]').forEach(c=>c.onclick=e=>{if(e.target.closest('.hp'))return;openForm(c.dataset.sc,c.dataset.id)});
+ document.querySelectorAll('[data-hp]').forEach(b=>b.onclick=e=>{
+  e.stopPropagation();
+  const p=byId('pcs',b.dataset.id);const mx=+p.maxhp||9999;
+  p.hp=Math.max(0,Math.min(mx,(+p.hp||0)+(+b.dataset.hp)));
+  save();render();
+ });
+}
+function openForm(sc,id){
+ const S=SCHEMAS[sc];const it=id?byId(sc,id):{};
+ editing={sc,id};
+ let h=`<h2>${id?'Изменить':'Новая запись'}: ${S.one}</h2>`;
+ for(const f of S.fields){
+  const v=it[f.k]==null?'':it[f.k];
+  h+=`<label>${f.l}</label>`;
+  if(f.t==='text')h+=`<input data-k="${f.k}" value="${esc(v)}">`;
+  else if(f.t==='num')h+=`<input data-k="${f.k}" type="number" inputmode="numeric" value="${esc(v)}">`;
+  else if(f.t==='date')h+=`<input data-k="${f.k}" type="date" value="${esc(v||new Date().toISOString().slice(0,10))}">`;
+  else if(f.t==='area')h+=`<textarea data-k="${f.k}">${esc(v)}</textarea>`;
+  else if(f.t==='select')h+=`<select data-k="${f.k}">${Object.entries(f.o).map(([a,b])=>`<option value="${a}" ${v===a?'selected':''}>${b}</option>`).join('')}</select>`;
+  else if(f.t.startsWith('ref:')){
+   const col=f.t.slice(4);
+   h+=`<select data-k="${f.k}"><option value="">— нет —</option>${DB[col].map(x=>`<option value="${x.id}" ${v===x.id?'selected':''}>${esc(x.name)}</option>`).join('')}</select>`;
+  }
+ }
+ if(sc==='pcs'&&id){
+  const qs=DB.quests.filter(q=>q.status==='active');
+  if(qs.length)h+=`<h4>Активные квесты группы</h4><p style="color:var(--muted);font-size:13px">${qs.map(q=>esc(q.name)).join(' · ')}</p>`;
+ }
+ h+=`<div class="btns"><button class="btn" id="ok">Сохранить</button><button class="btn sec" id="cancel">Отмена</button>${id?'<button class="btn del" id="del">Удалить</button>':''}</div>`;
+ document.getElementById('sheet').innerHTML=h;
+ document.getElementById('modal').classList.add('show');
+ document.getElementById('cancel').onclick=closeForm;
+ document.getElementById('ok').onclick=saveForm;
+ if(id)document.getElementById('del').onclick=()=>{if(confirm('Удалить запись?')){DB[sc]=DB[sc].filter(x=>x.id!==id);if(sc==='npcs')DB.quests.forEach(q=>{if(q.giver===id)q.giver=''});if(sc==='plot')DB.quests.forEach(q=>{if(q.plot===id)q.plot=''});save();closeForm();render()}};
+}
+function closeForm(){document.getElementById('modal').classList.remove('show');editing=null}
+function saveForm(){
+ const {sc,id}=editing;
+ const obj=id?byId(sc,id):{id:uid()};
+ document.querySelectorAll('#sheet [data-k]').forEach(el=>{obj[el.dataset.k]=el.value});
+ if(!obj.name||!obj.name.trim())obj.name='Без названия';
+ if(!id)DB[sc].push(obj);
+ save();closeForm();render();
+}
+function exportData(){
+ const blob=new Blob([JSON.stringify(DB,null,1)],{type:'application/json'});
+ const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+ a.download='dnd-master-backup-'+new Date().toISOString().slice(0,10)+'.json';a.click();
+}
+function importData(e){
+ const f=e.target.files[0];if(!f)return;
+ const r=new FileReader();
+ r.onload=()=>{try{const d=JSON.parse(r.result);if(!d.plot||!d.pcs)throw 0;if(confirm('Заменить текущие данные?')){DB=d;save();render()}}catch(x){alert('Файл не подходит')}};
+ r.readAsText(f);
+}
+document.getElementById('fab').onclick=()=>openForm(tab);
+document.getElementById('search').oninput=render;
+document.getElementById('modal').onclick=e=>{if(e.target.id==='modal')closeForm()};
+if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js');
+render();
+</script>
+</body>
+</html>
