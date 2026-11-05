@@ -23,8 +23,8 @@ main{padding:12px 14px}
 .tag{display:inline-block;padding:2px 8px;border-radius:20px;background:var(--card2);font-size:12px;color:var(--text)}
 .tag.active{background:#3d5a80}.tag.done{background:#3b6b3b}.tag.failed{background:#7a3030}.tag.pending{background:#6b5a2a}
 nav{position:fixed;bottom:0;left:0;right:0;display:flex;background:var(--card);border-top:1px solid var(--card2);padding-bottom:env(safe-area-inset-bottom);z-index:6}
-nav button{flex:1;background:none;border:0;color:var(--muted);padding:10px 2px;font-size:11px}
-nav button .i{display:block;font-size:20px}
+nav button{flex:1;min-width:0;background:none;border:0;color:var(--muted);padding:10px 0;font-size:10px}
+nav button .i{display:block;font-size:19px}
 nav button.on{color:var(--acc)}
 .fab{position:fixed;right:16px;bottom:calc(78px + env(safe-area-inset-bottom));width:54px;height:54px;border-radius:50%;background:var(--acc);color:#1b1522;border:0;font-size:30px;box-shadow:0 4px 12px #0008;z-index:7}
 .modal{position:fixed;inset:0;background:#000b;display:none;align-items:flex-end;z-index:20}
@@ -43,7 +43,36 @@ textarea{min-height:80px;resize:vertical}
 .hp button{width:32px;height:32px;border-radius:8px;border:0;background:var(--card2);color:var(--text);font-size:18px}
 .stat{font-size:13px;color:var(--text)}
 h4{margin:14px 0 6px;color:var(--acc);font-size:14px}
-.link{color:#8ec5ff;text-decoration:underline;font-size:13px;margin-right:8px}
+/* Бой */
+.ini{display:flex;align-items:center;gap:10px;background:var(--card);border-radius:12px;padding:10px 12px;margin-bottom:8px;border-left:4px solid var(--card2)}
+.ini.cur{border-left-color:var(--acc);background:var(--card2)}
+.ini.dead{opacity:.45}
+.ini .num{width:38px;height:38px;border-radius:50%;background:var(--bg);display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--acc);flex:none}
+.ini .nm{flex:1;min-width:0}
+.ini .nm b{display:block;font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ini .nm span{font-size:12px;color:var(--muted)}
+.ini .hpbox{display:flex;align-items:center;gap:4px;flex:none}
+.ini .hpbox button{width:30px;height:30px;border-radius:8px;border:0;background:var(--bg);color:var(--text);font-size:16px}
+.ini .hpbox b{min-width:44px;text-align:center;font-size:14px}
+.ini .x{background:none;border:0;color:var(--muted);font-size:18px;padding:4px}
+.round{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;padding:10px 12px;background:var(--card);border-radius:12px}
+.round b{color:var(--acc);font-size:16px}
+.addrow{display:grid;grid-template-columns:2fr 1fr 1fr;gap:8px}
+/* Кубики */
+.dice{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px}
+.die{padding:14px 0;border-radius:12px;border:0;background:var(--card2);color:var(--text);font-size:16px;font-weight:700}
+.die.sel{background:var(--acc);color:#1b1522}
+.res{background:var(--card);border-radius:14px;padding:18px;text-align:center;margin-bottom:12px;border-left:4px solid var(--acc)}
+.res .big{font-size:56px;font-weight:800;color:var(--acc);line-height:1}
+.res .big.crit{color:var(--ok)}
+.res .big.fail{color:var(--danger)}
+.res .sub{margin-top:8px;color:var(--muted);font-size:14px}
+.ctl{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.ctl .lbl{flex:1;font-size:14px;color:var(--muted)}
+.ctl button{width:38px;height:38px;border-radius:10px;border:0;background:var(--card2);color:var(--text);font-size:20px}
+.ctl b{min-width:34px;text-align:center;font-size:16px}
+.hist{font-size:13px;color:var(--muted)}
+.hist div{padding:6px 0;border-bottom:1px solid var(--card2)}
 </style>
 </head>
 <body>
@@ -60,6 +89,8 @@ const TABS=[
  {id:'pcs',name:'Игроки',icon:'🛡️'},
  {id:'npcs',name:'НИП',icon:'🎭'},
  {id:'sessions',name:'Сессии',icon:'📖'},
+ {id:'combat',name:'Бой',icon:'⚔️'},
+ {id:'dice',name:'Кубики',icon:'🎲'},
  {id:'more',name:'Ещё',icon:'⚙️'}
 ];
 const SCHEMAS={
@@ -107,7 +138,14 @@ const SCHEMAS={
 const KEY='dnd-master-v1';
 let DB=load();
 let tab='plot',editing=null;
-function load(){try{const d=JSON.parse(localStorage.getItem(KEY));if(d)return d}catch(e){}return{campaign:'Моя кампания',plot:[],quests:[],pcs:[],npcs:[],sessions:[]}}
+let DIE=20,DCOUNT=1,DMOD=0,DMODE='n',LAST=null;
+function load(){
+ let d=null;try{d=JSON.parse(localStorage.getItem(KEY))}catch(e){}
+ if(!d)d={campaign:'Моя кампания',plot:[],quests:[],pcs:[],npcs:[],sessions:[]};
+ if(!d.combat)d.combat={round:1,turn:0,list:[]};
+ if(!d.rolls)d.rolls=[];
+ return d;
+}
 function save(){localStorage.setItem(KEY,JSON.stringify(DB))}
 function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6)}
 function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
@@ -122,6 +160,10 @@ function statusTag(sc,item){
  if(!f)return'';
  const v=item[f.k];if(!v)return'';
  return `<span class="tag ${v}">${esc(f.o[v]||v)}</span>`;
+}
+function linkedQuests(pid){
+ const qs=DB.quests.filter(q=>q.plot===pid);
+ return qs.length?`<p>Квесты линии: ${qs.map(q=>esc(q.name)).join(', ')}</p>`:'';
 }
 function cardHTML(sc,it){
  let body='';
@@ -143,16 +185,145 @@ function cardHTML(sc,it){
  if(sc==='sessions')body=`<p>${esc(it.date||'')}</p><p>${esc((it.recap||'').slice(0,160))}${(it.recap||'').length>160?'…':''}</p>`;
  return `<div class="card" data-sc="${sc}" data-id="${it.id}"><div class="row"><h3>${esc(it.name||'Без названия')}</h3>${statusTag(sc,it)}</div>${body}</div>`;
 }
-function linkedQuests(pid){
- const qs=DB.quests.filter(q=>q.plot===pid);
- return qs.length?`<p>Квесты линии: ${qs.map(q=>esc(q.name)).join(', ')}</p>`:'';
+
+/* ===== БОЙ: трекер инициативы ===== */
+function sortCombat(){
+ const C=DB.combat;
+ const curId=C.list[C.turn]&&C.list[C.turn].id;
+ C.list.sort((a,b)=>(b.ini-a.ini)||((b.bonus||0)-(a.bonus||0)));
+ if(curId){const i=C.list.findIndex(x=>x.id===curId);C.turn=i<0?0:i}
 }
+function renderCombat(m){
+ const C=DB.combat;
+ let h=`<div class="round"><span>Раунд <b>${C.round}</b></span><div class="row"><button class="btn" id="cnext">Следующий ход ▶</button></div></div>`;
+ if(!C.list.length)h+=`<div class="empty">Бой пуст.<br>Добавь участников ниже или подтяни игроков.</div>`;
+ C.list.forEach((c,i)=>{
+  const hp=(c.hp===''||c.hp==null)?null:+c.hp;
+  const dead=hp!==null&&hp<=0;
+  h+=`<div class="ini ${i===C.turn?'cur':''} ${dead?'dead':''}">
+   <div class="num" data-edit-ini="${c.id}">${c.ini}</div>
+   <div class="nm"><b>${esc(c.name)}</b><span>${c.pc?'Игрок':'Враг/НИП'}${c.ac?' · КБ '+esc(c.ac):''}${dead?' · без сознания':''}</span></div>
+   ${hp!==null?`<div class="hpbox"><button data-chp="-1" data-id="${c.id}">−</button><b style="color:${c.maxhp&&hp<=c.maxhp/4?'var(--danger)':'var(--text)'}">${hp}${c.maxhp?'/'+c.maxhp:''}</b><button data-chp="1" data-id="${c.id}">+</button></div>`:''}
+   <button class="x" data-cdel="${c.id}">✕</button>
+  </div>`;
+ });
+ h+=`<h4>Добавить участника</h4>
+ <div class="card" style="border-left-color:var(--card2)">
+  <div class="addrow"><input id="cn" placeholder="Имя"><input id="ci" type="number" inputmode="numeric" placeholder="Иниц."><input id="ch" type="number" inputmode="numeric" placeholder="Хиты"></div>
+  <div class="btns"><button class="btn" id="cadd">Добавить</button><button class="btn sec" id="croll">Бросить d20 за имя</button></div>
+  <div class="btns"><button class="btn sec" id="cpcs">Подтянуть всех игроков</button><button class="btn del" id="cclear">Закончить бой</button></div>
+ </div>`;
+ m.innerHTML=h;
+ document.getElementById('cnext').onclick=()=>{
+  if(!C.list.length)return;
+  C.turn++;
+  if(C.turn>=C.list.length){C.turn=0;C.round++}
+  save();render();
+ };
+ const addOne=(ini)=>{
+  const name=document.getElementById('cn').value.trim();
+  if(!name){alert('Впиши имя');return}
+  const hpv=document.getElementById('ch').value;
+  C.list.push({id:uid(),name,ini:+ini||0,hp:hpv,maxhp:hpv,pc:false});
+  sortCombat();save();render();
+ };
+ document.getElementById('cadd').onclick=()=>{
+  const v=document.getElementById('ci').value;
+  if(v===''){alert('Впиши инициативу или нажми «Бросить d20»');return}
+  addOne(v);
+ };
+ document.getElementById('croll').onclick=()=>addOne(Math.floor(Math.random()*20)+1);
+ document.getElementById('cpcs').onclick=()=>{
+  const used=new Set(C.list.map(x=>x.pcId).filter(Boolean));
+  let n=0;
+  DB.pcs.forEach(p=>{
+   if(used.has(p.id))return;
+   const v=prompt('Инициатива: '+p.name+' (пусто = бросить d20)','');
+   if(v===null)return;
+   const ini=v===''?Math.floor(Math.random()*20)+1:+v;
+   C.list.push({id:uid(),pcId:p.id,name:p.name,ini,hp:p.hp,maxhp:p.maxhp,ac:p.ac,pc:true});n++;
+  });
+  if(!n&&!DB.pcs.length)alert('Сначала добавь персонажей на вкладке «Игроки»');
+  sortCombat();save();render();
+ };
+ document.getElementById('cclear').onclick=()=>{
+  if(confirm('Закончить бой и очистить список?')){DB.combat={round:1,turn:0,list:[]};save();render()}
+ };
+ m.querySelectorAll('[data-chp]').forEach(b=>b.onclick=()=>{
+  const c=C.list.find(x=>x.id===b.dataset.id);
+  c.hp=Math.max(0,(+c.hp||0)+(+b.dataset.chp));
+  if(c.pcId){const p=byId('pcs',c.pcId);if(p)p.hp=c.hp}
+  save();render();
+ });
+ m.querySelectorAll('[data-cdel]').forEach(b=>b.onclick=()=>{
+  const i=C.list.findIndex(x=>x.id===b.dataset.cdel);
+  if(i<0)return;
+  C.list.splice(i,1);
+  if(C.turn>i)C.turn--;
+  if(C.turn>=C.list.length)C.turn=0;
+  save();render();
+ });
+ m.querySelectorAll('[data-edit-ini]').forEach(b=>b.onclick=()=>{
+  const c=C.list.find(x=>x.id===b.dataset.editIni);
+  const v=prompt('Инициатива: '+c.name,c.ini);
+  if(v===null||v==='')return;
+  c.ini=+v||0;sortCombat();save();render();
+ });
+}
+
+/* ===== КУБИКИ ===== */
+function rollDice(){
+ const rolls=[];
+ for(let i=0;i<DCOUNT;i++){
+  if(DIE===100)rolls.push(Math.floor(Math.random()*100)+1);
+  else rolls.push(Math.floor(Math.random()*DIE)+1);
+ }
+ let used=rolls.slice(),note='';
+ if(DIE===20&&DCOUNT===1&&DMODE!=='n'){
+  const r2=Math.floor(Math.random()*20)+1;
+  const both=[rolls[0],r2];
+  used=[DMODE==='a'?Math.max(...both):Math.min(...both)];
+  note=(DMODE==='a'?'Преимущество':'Помеха')+': '+both.join(' и ');
+ }
+ const sum=used.reduce((a,b)=>a+b,0)+DMOD;
+ const label=DCOUNT+'d'+DIE+(DMOD?(DMOD>0?'+':'')+DMOD:'');
+ LAST={sum,label,rolls:used,note,die:DIE,count:DCOUNT};
+ DB.rolls.unshift({t:Date.now(),label,sum,rolls:used.join(', ')+(note?' ('+note+')':'')});
+ DB.rolls=DB.rolls.slice(0,15);
+ save();render();
+}
+function renderDice(m){
+ const dies=[4,6,8,10,12,20,100];
+ let h=`<div class="dice">${dies.map(d=>`<button class="die ${d===DIE?'sel':''}" data-d="${d}">d${d}</button>`).join('')}<button class="die" id="dclr" style="font-size:13px">Сброс</button></div>`;
+ let big='—',cls='',sub='Выбери кубик и брось';
+ if(LAST){
+  big=LAST.sum;
+  if(LAST.die===20&&LAST.count===1){const nat=LAST.rolls[0];if(nat===20)cls='crit';if(nat===1)cls='fail'}
+  sub=LAST.label+' = '+(LAST.rolls.length>1||DMOD?LAST.rolls.join(' + ')+(DMOD?' '+(DMOD>0?'+ ':'− ')+Math.abs(DMOD):''):LAST.rolls[0])+(LAST.note?'<br>'+esc(LAST.note):'')+(cls==='crit'?'<br>Критический успех!':cls==='fail'?'<br>Критический провал':'');
+ }
+ h+=`<div class="res"><div class="big ${cls}">${big}</div><div class="sub">${sub}</div></div>`;
+ h+=`<div class="card" style="border-left-color:var(--card2)">
+  <div class="ctl"><span class="lbl">Сколько кубиков</span><button data-c="-1">−</button><b>${DCOUNT}</b><button data-c="1">+</button></div>
+  <div class="ctl"><span class="lbl">Модификатор</span><button data-m="-1">−</button><b>${DMOD>0?'+':''}${DMOD}</b><button data-m="1">+</button></div>
+  ${DIE===20&&DCOUNT===1?`<div class="btns" style="margin-top:6px"><button class="btn ${DMODE==='n'?'':'sec'}" data-mode="n">Обычный</button><button class="btn ${DMODE==='a'?'':'sec'}" data-mode="a">Преимущ.</button><button class="btn ${DMODE==='d'?'':'sec'}" data-mode="d">Помеха</button></div>`:''}
+  <div class="btns"><button class="btn" id="droll" style="flex:1;font-size:18px">🎲 Бросить ${DCOUNT}d${DIE}${DMOD?(DMOD>0?'+':'')+DMOD:''}</button></div>
+ </div>`;
+ if(DB.rolls.length)h+=`<h4>Последние броски</h4><div class="hist">${DB.rolls.map(r=>`<div><b style="color:var(--text)">${r.sum}</b> · ${esc(r.label)} · ${esc(r.rolls)}</div>`).join('')}</div>`;
+ m.innerHTML=h;
+ m.querySelectorAll('[data-d]').forEach(b=>b.onclick=()=>{DIE=+b.dataset.d;if(DIE!==20)DMODE='n';render()});
+ document.getElementById('dclr').onclick=()=>{DCOUNT=1;DMOD=0;DMODE='n';LAST=null;render()};
+ m.querySelectorAll('[data-c]').forEach(b=>b.onclick=()=>{DCOUNT=Math.max(1,Math.min(20,DCOUNT+(+b.dataset.c)));if(DCOUNT>1)DMODE='n';render()});
+ m.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{DMOD=Math.max(-20,Math.min(20,DMOD+(+b.dataset.m)));render()});
+ m.querySelectorAll('[data-mode]').forEach(b=>b.onclick=()=>{DMODE=b.dataset.mode;render()});
+ document.getElementById('droll').onclick=rollDice;
+}
+
 function render(){
  nav();
  document.getElementById('title').textContent=DB.campaign;
  const m=document.getElementById('main');
  const q=document.getElementById('search').value.trim().toLowerCase();
- document.getElementById('fab').style.display=(tab==='more'||q)?'none':'block';
+ document.getElementById('fab').style.display=(tab==='more'||tab==='combat'||tab==='dice'||q)?'none':'block';
  if(q){
   let out='';
   for(const sc of Object.keys(SCHEMAS)){
@@ -162,6 +333,8 @@ function render(){
   m.innerHTML=out||'<div class="empty">Ничего не найдено</div>';
   bind();return;
  }
+ if(tab==='combat'){renderCombat(m);return}
+ if(tab==='dice'){renderDice(m);return}
  if(tab==='more'){
   m.innerHTML=`<div class="card"><h3>Название кампании</h3><input id="cname" value="${esc(DB.campaign)}"></div>
   <div class="card"><h3>Резервная копия</h3><p>Сохрани файл с данными или восстанови из файла.</p><div class="btns"><button class="btn" id="exp">Экспорт</button><button class="btn sec" id="imp">Импорт</button></div><input type="file" id="file" accept=".json" style="display:none"></div>
@@ -232,7 +405,7 @@ function exportData(){
 function importData(e){
  const f=e.target.files[0];if(!f)return;
  const r=new FileReader();
- r.onload=()=>{try{const d=JSON.parse(r.result);if(!d.plot||!d.pcs)throw 0;if(confirm('Заменить текущие данные?')){DB=d;save();render()}}catch(x){alert('Файл не подходит')}};
+ r.onload=()=>{try{const d=JSON.parse(r.result);if(!d.plot||!d.pcs)throw 0;if(confirm('Заменить текущие данные?')){DB=d;if(!DB.combat)DB.combat={round:1,turn:0,list:[]};if(!DB.rolls)DB.rolls=[];save();render()}}catch(x){alert('Файл не подходит')}};
  r.readAsText(f);
 }
 document.getElementById('fab').onclick=()=>openForm(tab);
