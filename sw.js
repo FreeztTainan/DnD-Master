@@ -1,4 +1,4 @@
-const CACHE = 'dnd-master-v2';
+const CACHE = 'dnd-master-v3';
 const FILES = ['./', './index.html', './manifest.json', './icon.svg'];
 
 self.addEventListener('install', e => {
