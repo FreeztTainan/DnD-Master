@@ -73,6 +73,12 @@ h4{margin:14px 0 6px;color:var(--acc);font-size:14px}
 .ctl b{min-width:34px;text-align:center;font-size:16px}
 .hist{font-size:13px;color:var(--muted)}
 .hist div{padding:6px 0;border-bottom:1px solid var(--card2)}
+/* Портреты */
+.withava{display:flex;gap:10px;align-items:flex-start}
+.withava .grow{flex:1;min-width:0}
+.ava{width:64px;height:64px;border-radius:12px;object-fit:cover;flex:none;border:2px solid var(--card2)}
+.pimg{display:block;width:140px;height:140px;border-radius:14px;object-fit:cover;border:2px solid var(--card2)}
+.pimg.ph{display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:13px;background:var(--bg)}
 </style>
 </head>
 <body>
@@ -109,7 +115,7 @@ const SCHEMAS={
   {k:'reward',l:'Награда',t:'text'},
   {k:'notes',l:'Заметки',t:'area'}]},
  pcs:{one:'Персонаж игрока',fields:[
-  {k:'name',l:'Имя персонажа',t:'text'},
+  {k:'name',l:'Имя персонажа',t:'text'},{k:'img',l:'Портрет',t:'img'},
   {k:'player',l:'Игрок',t:'text'},
   {k:'cls',l:'Класс и раса',t:'text'},
   {k:'lvl',l:'Уровень',t:'num'},
@@ -183,7 +189,9 @@ function cardHTML(sc,it){
   body=`<p>${esc(it.role)}${it.loc?' · 📍'+esc(it.loc):''}</p>${qs.length?`<p>Квесты: ${qs.map(q=>esc(q.name)).join(', ')}</p>`:''}`;
  }
  if(sc==='sessions')body=`<p>${esc(it.date||'')}</p><p>${esc((it.recap||'').slice(0,160))}${(it.recap||'').length>160?'…':''}</p>`;
- return `<div class="card" data-sc="${sc}" data-id="${it.id}"><div class="row"><h3>${esc(it.name||'Без названия')}</h3>${statusTag(sc,it)}</div>${body}</div>`;
+ const inner=`<div class="row"><h3>${esc(it.name||'Без названия')}</h3>${statusTag(sc,it)}</div>${body}`;
+ const ava=(sc==='pcs'&&it.img)?'<img class="ava" alt="" src="'+it.img+'">':'';
+ return `<div class="card" data-sc="${sc}" data-id="${it.id}">${ava?'<div class="withava">'+ava+'<div class="grow">'+inner+'</div></div>':inner}</div>`;
 }
 
 /* ===== БОЙ: трекер инициативы ===== */
@@ -327,7 +335,7 @@ function render(){
  if(q){
   let out='';
   for(const sc of Object.keys(SCHEMAS)){
-   const hits=DB[sc].filter(it=>JSON.stringify(it).toLowerCase().includes(q));
+   const hits=DB[sc].filter(it=>JSON.stringify(Object.assign({},it,{img:''})).toLowerCase().includes(q));
    if(hits.length)out+=`<h4>${SCHEMAS[sc].one}</h4>`+hits.map(it=>cardHTML(sc,it)).join('');
   }
   m.innerHTML=out||'<div class="empty">Ничего не найдено</div>';
@@ -370,7 +378,7 @@ function openForm(sc,id){
   if(f.t==='text')h+=`<input data-k="${f.k}" value="${esc(v)}">`;
   else if(f.t==='num')h+=`<input data-k="${f.k}" type="number" inputmode="numeric" value="${esc(v)}">`;
   else if(f.t==='date')h+=`<input data-k="${f.k}" type="date" value="${esc(v||new Date().toISOString().slice(0,10))}">`;
-  else if(f.t==='area')h+=`<textarea data-k="${f.k}">${esc(v)}</textarea>`;
+  else if(f.t==='img')h+=imgFieldHTML();else if(f.t==='area')h+=`<textarea data-k="${f.k}">${esc(v)}</textarea>`;
   else if(f.t==='select')h+=`<select data-k="${f.k}">${Object.entries(f.o).map(([a,b])=>`<option value="${a}" ${v===a?'selected':''}>${b}</option>`).join('')}</select>`;
   else if(f.t.startsWith('ref:')){
    const col=f.t.slice(4);
@@ -384,9 +392,52 @@ function openForm(sc,id){
  h+=`<div class="btns"><button class="btn" id="ok">Сохранить</button><button class="btn sec" id="cancel">Отмена</button>${id?'<button class="btn del" id="del">Удалить</button>':''}</div>`;
  document.getElementById('sheet').innerHTML=h;
  document.getElementById('modal').classList.add('show');
+ initImgField(it.img||'');
  document.getElementById('cancel').onclick=closeForm;
  document.getElementById('ok').onclick=saveForm;
  if(id)document.getElementById('del').onclick=()=>{if(confirm('Удалить запись?')){DB[sc]=DB[sc].filter(x=>x.id!==id);if(sc==='npcs')DB.quests.forEach(q=>{if(q.giver===id)q.giver=''});if(sc==='plot')DB.quests.forEach(q=>{if(q.plot===id)q.plot=''});save();closeForm();render()}};
+}
+/* Портрет персонажа: выбор PNG/JPEG, сжатие до 480 px, хранение в памяти телефона */
+function imgFieldHTML(){
+ return '<div id="imgbox"></div><input type="hidden" data-k="img" id="imgval"><div class="btns" style="margin-top:8px"><button class="btn sec" type="button" id="imgpick">Выбрать PNG / JPEG</button><button class="btn sec" type="button" id="imgdel">Убрать</button></div><input type="file" id="imgfile" accept="image/png,image/jpeg" style="display:none">';
+}
+function showImg(v){
+ const b=document.getElementById('imgbox');
+ document.getElementById('imgval').value=v||'';
+ b.innerHTML=v?'<img class="pimg" alt="">':'<div class="pimg ph">Нет картинки</div>';
+ if(v)b.firstChild.src=v;
+ document.getElementById('imgdel').style.display=v?'':'none';
+}
+function initImgField(v){
+ const f=document.getElementById('imgfile');
+ if(!f)return;
+ showImg(v);
+ document.getElementById('imgpick').onclick=()=>f.click();
+ document.getElementById('imgdel').onclick=()=>showImg('');
+ f.onchange=()=>{
+  const file=f.files[0];
+  if(!file)return;
+  if(file.type!=='image/png'&&file.type!=='image/jpeg'){alert('Нужен PNG или JPEG');f.value='';return;}
+  const r=new FileReader();
+  r.onload=()=>{
+   const im=new Image();
+   im.onload=()=>{
+    const k=Math.min(1,480/Math.max(im.width,im.height));
+    const c=document.createElement('canvas');
+    c.width=Math.round(im.width*k);
+    c.height=Math.round(im.height*k);
+    const x=c.getContext('2d');
+    x.fillStyle='#2a2133';
+    x.fillRect(0,0,c.width,c.height);
+    x.drawImage(im,0,0,c.width,c.height);
+    showImg(c.toDataURL('image/jpeg',0.85));
+    f.value='';
+   };
+   im.onerror=()=>{alert('Не удалось открыть картинку');};
+   im.src=r.result;
+  };
+  r.readAsDataURL(file);
+ };
 }
 function closeForm(){document.getElementById('modal').classList.remove('show');editing=null}
 function saveForm(){
