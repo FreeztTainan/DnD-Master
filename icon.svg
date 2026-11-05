@@ -1,23 +1,25 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
   <rect width="512" height="512" fill="#1b1522"/>
 
-  <!-- Корпус: шестиугольный силуэт d20 -->
-  <polygon points="256,52 432,154 432,358 256,460 80,358 80,154" fill="#d4a24c" stroke="#f1d28a" stroke-width="8" stroke-linejoin="round"/>
+  <!-- Корпус d20: правильный шестиугольник -->
+  <polygon points="256,51 434,154 434,358 256,461 78,358 78,154" fill="#d4a24c" stroke="#1b1522" stroke-width="8" stroke-linejoin="round"/>
 
-  <!-- Центральная грань с цифрой -->
-  <polygon points="256,142 360,322 152,322" fill="#e8c070" stroke="#1b1522" stroke-width="8" stroke-linejoin="round"/>
+  <!-- Центральная грань -->
+  <polygon points="256,129 366,319 146,319" fill="#e8c070" stroke="#1b1522" stroke-width="8" stroke-linejoin="round"/>
 
-  <!-- Рёбра от центральной грани к вершинам -->
+  <!-- Рёбра от углов центральной грани к вершинам контура -->
   <g stroke="#1b1522" stroke-width="8" stroke-linecap="round" fill="none">
-    <line x1="256" y1="142" x2="256" y2="52"/>
-    <line x1="360" y1="322" x2="432" y2="358"/>
-    <line x1="152" y1="322" x2="80" y2="358"/>
-    <line x1="256" y1="142" x2="432" y2="154"/>
-    <line x1="256" y1="142" x2="80" y2="154"/>
-    <line x1="360" y1="322" x2="256" y2="460"/>
-    <line x1="152" y1="322" x2="256" y2="460"/>
+    <line x1="256" y1="129" x2="256" y2="51"/>
+    <line x1="256" y1="129" x2="434" y2="154"/>
+    <line x1="256" y1="129" x2="78" y2="154"/>
+    <line x1="146" y1="319" x2="78" y2="358"/>
+    <line x1="146" y1="319" x2="78" y2="154"/>
+    <line x1="146" y1="319" x2="256" y2="461"/>
+    <line x1="366" y1="319" x2="434" y2="358"/>
+    <line x1="366" y1="319" x2="434" y2="154"/>
+    <line x1="366" y1="319" x2="256" y2="461"/>
   </g>
 
   <!-- Цифра -->
-  <text x="256" y="290" font-size="80" font-weight="bold" text-anchor="middle" fill="#1b1522" font-family="Georgia, serif">20</text>
+  <text x="256" y="272" font-size="84" font-weight="bold" text-anchor="middle" fill="#1b1522" font-family="Georgia, serif">20</text>
 </svg>
