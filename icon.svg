@@ -2,10 +2,10 @@
   <rect width="512" height="512" fill="#1b1522"/>
 
   <!-- Корпус d20: правильный шестиугольник -->
-  <polygon points="256,51 434,154 434,358 256,461 78,358 78,154" fill="#d4a24c" stroke="#1b1522" stroke-width="8" stroke-linejoin="round"/>
+  <polygon points="256,51 434,154 434,358 256,461 78,358 78,154" fill="#3f51d6" stroke="#1b1522" stroke-width="8" stroke-linejoin="round"/>
 
   <!-- Центральная грань -->
-  <polygon points="256,129 366,319 146,319" fill="#e8c070" stroke="#1b1522" stroke-width="8" stroke-linejoin="round"/>
+  <polygon points="256,129 366,319 146,319" fill="#7f93ff" stroke="#1b1522" stroke-width="8" stroke-linejoin="round"/>
 
   <!-- Рёбра от углов центральной грани к вершинам контура -->
   <g stroke="#1b1522" stroke-width="8" stroke-linecap="round" fill="none">
